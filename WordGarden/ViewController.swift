@@ -14,7 +14,7 @@ class ViewController: UIViewController {
     
     
     @IBOutlet weak var wordsMissedLabel: UILabel!
-    @IBOutlet weak var wordsInGame: UILabel!
+    @IBOutlet weak var wordsInGameLabel: UILabel!
     
     @IBOutlet weak var wordsBeingRevealedLabel: UILabel!
     
@@ -30,11 +30,24 @@ class ViewController: UIViewController {
     @IBOutlet weak var flowerImageView: UIImageView!
     
     
+    var wordsToGuess = ["SWIFT", "DOG", "CAT"]
+    var currentWordIndex = 0
+    var wordToGuess = ""
+    var lettersGuessed = ""
+    let maxNumberOfWrongGuesses = 0
+    var wrongGuessesRemaining = 8
+    var wordsGuessedCount = 0
+    var wordsMissedCount = 0
+    var guessCount = 0
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
         let text = guessedLetterTextField.text!
         guessLetterButton.isEnabled = !(text.isEmpty)
+        wordToGuess = wordsToGuess[currentWordIndex]
+        wordsBeingRevealedLabel.text = "_" + String(repeating: " _", count: wordToGuess.count - 1)
+        updateGameStatusLabels()
     }
     
     func updateUIAfterGuess() {
@@ -43,28 +56,126 @@ class ViewController: UIViewController {
         guessLetterButton.isEnabled = false
     }
     
+    func formatRevealedWord() {
+        var revealedWord = ""
+
+        //loop through all letters in wordToGuess
+        for letter in wordToGuess {
+            //check if letter in wordToGuess is in lettersGuessed
+            if lettersGuessed.contains(letter) {
+                revealedWord = revealedWord + "\(letter)"
+            } else {
+                revealedWord = revealedWord + "_ "
+            }
+        }
+
+        revealedWord.removeLast()
+        wordsBeingRevealedLabel.text = revealedWord
+    }
+    
+    func updateAfterWinOrLose() {
+        // increment currentWord Index by one
+        // diable guessALetterButton
+        // show play again button
+        
+        currentWordIndex += 1
+        guessedLetterTextField.isEnabled = false
+        guessLetterButton.isHidden = false
+        
+        // updatelabels at top of screen
+        updateGameStatusLabels()
+    }
+    
+    func  updateGameStatusLabels() {
+        wordsGuessedLable.text = "Words Guessed: \(wordsGuessedCount)"
+        wordsMissedLabel.text = "Words Missed: \(wordsMissedCount)"
+        wordsRemainingLabel.text = "Words to Guess: \(wordToGuess.count - (wordsGuessedCount + wordsMissedCount))"
+        wordsInGameLabel.text = "Words in Game: \(wordsToGuess.count)"
+    }
+    
+    func guessALetter() {
+        // get currentLetterGuessed and add it to all lettersGuessed
+        let currentLetterGuessed = guessedLetterTextField.text!
+        lettersGuessed = lettersGuessed + currentLetterGuessed
+        
+        //format and show revealedWord in wordBeingRevealedLabel to include new guess
+        formatRevealedWord()
+        
+        //update image, if needed and keep track of wrong guesses
+        if wordToGuess.contains(currentLetterGuessed) == false{
+            wrongGuessesRemaining = wrongGuessesRemaining - 1
+            flowerImageView.image = UIImage(named: "flower\(wrongGuessesRemaining)")
+        }
+        
+        //update game status messagelabel
+        guessCount += 1
+        // var guesses = "Guesses"
+        let guesses = (guessCount == 1 ? "Guess" : "Guesses")
+//        if guessCount == 1 {
+//            guesses = "Guess"
+//        }
+        gameStatusMessageLabel.text = "You've Made \(guessCount) \(guesses)"
+        
+        //After each guess, check if they won (no more underscores)
+        //Check if lost the game, wrong guesses remaining == 0
+        
+        if wordsBeingRevealedLabel.text?.contains("_") == false {
+            gameStatusMessageLabel.text = "You've guessed it! It took you \(guessCount) guesses to guess the word."
+            wordsGuessedCount += 1
+            updateAfterWinOrLose()
+        } else if wrongGuessesRemaining == 0 {
+            gameStatusMessageLabel.text = "So sorry. You're all out of guesses."
+            wordsMissedCount += 1
+            updateAfterWinOrLose()
+        }
+        
+        //check to see if you have played all the words
+        if currentWordIndex == wordsToGuess.count {
+            gameStatusMessageLabel.text! += "\n\nYou've tried all of the words! Restart from the beginning?"
+        }
+    }
+    
     
     @IBAction func guessLetterFieldChanged(_ sender: UITextField) {
-        var text = sender.text!
-        text = String(sender.text!.last ?? " ").trimmingCharacters(in: .whitespaces)
-        sender.text = text
-        guessLetterButton.isEnabled = !(text.isEmpty)
+        sender.text = String(sender.text?.last ?? " ").trimmingCharacters(in: .whitespaces)
+        guessLetterButton.isEnabled = !(sender.text!.isEmpty)
     }
     
     
     @IBAction func doneKeyPressed(_ sender: UITextField) {
+        guessALetter()
         updateUIAfterGuess()
     }
     
     
     
     @IBAction func guessLetterButtonPressed(_ sender: UIButton) {
+        guessALetter()
         updateUIAfterGuess()
     }
     
     
     
     @IBAction func playAgainButtonPressed(_ sender: UIButton) {
+        // hide play again button
+        if currentWordIndex == wordToGuess.count {
+            currentWordIndex = 0
+            wordsGuessedCount = 0
+            wordsMissedCount = 0
+        }
+        
+        playAgainButton.isHidden = true
+        guessedLetterTextField.isEnabled = true
+        guessLetterButton.isEnabled = false
+        wordToGuess = wordsToGuess[currentWordIndex]
+        wrongGuessesRemaining = maxNumberOfWrongGuesses
+        
+        wordsBeingRevealedLabel.text = "_" + String(repeating: " _", count: wordToGuess.count - 1)
+        guessCount = 0
+        flowerImageView.image = UIImage(named: "flower\(maxNumberOfWrongGuesses)")
+        lettersGuessed = ""
+        updateGameStatusLabels()
+        gameStatusMessageLabel.text = "You've Made Zero Guesses"
     }
     
 }
