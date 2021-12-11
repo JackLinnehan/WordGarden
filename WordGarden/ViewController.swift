@@ -118,7 +118,6 @@ class ViewController: UIViewController {
                     }
                     
                 }
-                
                 self.playSound(name: "incorrect")
             }
         } else {
